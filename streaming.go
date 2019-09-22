@@ -1,0 +1,44 @@
+package streaming
+
+import "github.com/golang/protobuf/proto"
+
+// ApplyableEntity wraps Apply. Apply applies the given event to the
+// entity. Apply mutates the receiver.
+//
+// When given an event that isn't known by the Apply function, Apply will
+// panic since it is considered a programmer mistake.
+type ApplyableEntity interface {
+	Apply(event interface{})
+}
+
+// ApplyFunc returns a new entity that was mutated by the given event.
+type ApplyFunc func(entity interface{}, event proto.Message) interface{}
+
+// Subject represents a stream of events that you can subscribe from and is
+// defined by a name such as "bankaccount" (it is called 'subject' in NATS
+// and 'topic' in Rabbitmq). Each event focuses on one entity ID, and an
+// entity is the 'rehydration' (applying one by one) of all events that have
+// the same entity ID.
+//
+// Example: `bankaccount.OTE3Yzk3Y2YtMDg` where OTE3Yzk3Y2YtMDg is the id
+// of a specific bank account.
+type Subject string
+
+// StreamingServer allows you to interact with a streaming server such as
+// NATS or Kafka.
+type StreamingServer interface {
+
+	// RehydrateEntity rehydrates an entity by replaying events that match
+	// the given `entityID` and store the result in the pointer `entity`.
+	//
+	// If the `wsID` doesn't match the entity's workspace ID, returns
+	// ErrWrongWorkspace . If this `entityID` doesn't match any event,
+	// returns ErrEntityNotFound.
+	RehydrateEntity(s Subject, entityID string, entity ApplyableEntity) error
+
+	// PublishEvent publishes the given `event` to the server. The event is
+	// applied to the given `entityID`.
+	//
+	// The only possible errors are related to server connectivity.
+	PublishEvent(s Subject, entityID string, event proto.Message) error
+}

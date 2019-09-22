@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package eventpb;
+
+message Created { string name = 1; }
+message Edited { string name = 1; }
+message UnhandledEvent {  }

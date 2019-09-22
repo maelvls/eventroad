@@ -18,11 +18,11 @@ type ApplyFunc func(entity interface{}, event proto.Message) interface{}
 // Subject represents a stream of events that you can subscribe from and is
 // defined by a name such as "bankaccount" (it is called 'subject' in NATS
 // and 'topic' in Rabbitmq). Each event focuses on one entity ID, and an
-// entity is the 'rehydration' (applying one by one) of all events that have
-// the same entity ID.
+// entity is the 'rehydration' (applying one by one) of all events that
+// have the same entity ID.
 //
-// Example: `bankaccount.OTE3Yzk3Y2YtMDg` where OTE3Yzk3Y2YtMDg is the id
-// of a specific bank account.
+// Examples: BankAccount.OTE3Yzk3Y2YtMDg.Created where OTE3Yzk3Y2YtMDg is
+// the id of a specific bank account.
 type Subject string
 
 // Server allows you to interact with a streaming server such as NATS or
@@ -35,11 +35,17 @@ type Server interface {
 	// If the `wsID` doesn't match the entity's workspace ID, returns
 	// ErrWrongWorkspace . If this `entityID` doesn't match any event,
 	// returns ErrEntityNotFound.
-	RehydrateEntity(s Subject, entityID string, entity ApplyableEntity) error
+	//
+	// Subject example: BankAccount.OTE3Yzk3Y2YtMDg.* will rehydrate the
+	// entity OTE3Yzk3Y2YtMDg.
+	RehydrateEntity(s Subject, entity ApplyableEntity) error
 
 	// PublishEvent publishes the given `event` to the server. The event is
 	// applied to the given `entityID`.
 	//
-	// The only possible errors are related to server connectivity.
-	PublishEvent(s Subject, entityID string, event proto.Message) error
+	// Possible errors are server connectivity or proto.Marshal error.
+	//
+	// Subject example: BankAccount.OTE3Yzk3Y2YtMDg.Created will publish
+	// `event` as a Created event.
+	PublishEvent(s Subject, event proto.Message) error
 }

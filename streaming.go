@@ -11,7 +11,8 @@ type ApplyableEntity interface {
 	Apply(event interface{})
 }
 
-// ApplyFunc returns a new entity that was mutated by the given event.
+// ApplyFunc returns a new entity that results of the application of the
+// `event` on top of the `entity`.
 type ApplyFunc func(entity interface{}, event proto.Message) interface{}
 
 // Subject represents a stream of events that you can subscribe from and is
@@ -24,9 +25,9 @@ type ApplyFunc func(entity interface{}, event proto.Message) interface{}
 // of a specific bank account.
 type Subject string
 
-// StreamingServer allows you to interact with a streaming server such as
-// NATS or Kafka.
-type StreamingServer interface {
+// Server allows you to interact with a streaming server such as NATS or
+// Kafka.
+type Server interface {
 
 	// RehydrateEntity rehydrates an entity by replaying events that match
 	// the given `entityID` and store the result in the pointer `entity`.

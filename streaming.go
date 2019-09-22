@@ -32,10 +32,6 @@ type Server interface {
 	// RehydrateEntity rehydrates an entity by replaying events that match
 	// the given `entityID` and store the result in the pointer `entity`.
 	//
-	// If the `wsID` doesn't match the entity's workspace ID, returns
-	// ErrWrongWorkspace . If this `entityID` doesn't match any event,
-	// returns ErrEntityNotFound.
-	//
 	// Subject example: BankAccount.OTE3Yzk3Y2YtMDg.* will rehydrate the
 	// entity OTE3Yzk3Y2YtMDg.
 	RehydrateEntity(s Subject, entity ApplyableEntity) error

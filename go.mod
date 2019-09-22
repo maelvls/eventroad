@@ -6,7 +6,7 @@ require (
 	github.com/cosiner/argv v0.0.1 // indirect
 	github.com/go-delve/delve v1.3.1 // indirect
 	github.com/golang/protobuf v1.3.2
-	github.com/imdario/mergo v0.3.7
+	github.com/imdario/mergo v0.3.7 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/maelvls/gotests v1.5.4-0.20190919094623-d4bd4e3129be // indirect
 	github.com/mattn/go-colorable v0.1.2 // indirect

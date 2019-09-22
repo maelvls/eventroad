@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/maelvls/eventroad/eventpb"
+	"github.com/maelvls/eventroad/example/eventpb"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/golang/protobuf/proto"

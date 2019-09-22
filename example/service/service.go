@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/maelvls/eventroad/eventpb"
+	"github.com/maelvls/eventroad/example/eventpb"
 )
 
 // BankAccount is an example of an entity.

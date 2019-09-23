@@ -1,6 +1,10 @@
 package streaming
 
-import "github.com/golang/protobuf/proto"
+import (
+	"fmt"
+
+	"github.com/golang/protobuf/proto"
+)
 
 // ApplyableEntity wraps Apply. Apply applies the given event to the
 // entity. Apply mutates the receiver.
@@ -8,12 +12,10 @@ import "github.com/golang/protobuf/proto"
 // When given an event that isn't known by the Apply function, Apply will
 // panic since it is considered a programmer mistake.
 type ApplyableEntity interface {
-	Apply(event interface{})
+	// Apply mutates `entity` itself by unmarshalling and then applying the
+	// given raw event.
+	Apply(s Subject, event []byte) error
 }
-
-// ApplyFunc returns a new entity that results of the application of the
-// `event` on top of the `entity`.
-type ApplyFunc func(entity interface{}, event proto.Message) interface{}
 
 // Subject represents a stream of events that you can subscribe from and is
 // defined by a name such as "bankaccount" (it is called 'subject' in NATS
@@ -23,7 +25,24 @@ type ApplyFunc func(entity interface{}, event proto.Message) interface{}
 //
 // Examples: BankAccount.OTE3Yzk3Y2YtMDg.Created where OTE3Yzk3Y2YtMDg is
 // the id of a specific bank account.
-type Subject string
+type Subject struct {
+	Root     string
+	EntityID string
+	Action   string
+}
+
+// String returns a subject formatted as `BankAccount.OTE3Yzk3Y2Y.Created`.
+// If ID or Event are left blank, its value is replaced by `*` (wildcard).
+// The Root field cannot be empty.
+func (s Subject) String() string {
+	if s.EntityID == "" {
+		s.EntityID = "*"
+	}
+	if s.Action == "" {
+		s.Action = "*"
+	}
+	return fmt.Sprintf("%s.%s.%s", s.Root, s.EntityID, s.Action)
+}
 
 // Server allows you to interact with a streaming server such as NATS or
 // Kafka.

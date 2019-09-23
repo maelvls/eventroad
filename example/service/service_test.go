@@ -1,10 +1,12 @@
 package service
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
+	streaming "github.com/maelvls/eventroad"
 	"github.com/maelvls/eventroad/example/eventpb"
 	"github.com/stretchr/testify/assert"
 
@@ -13,50 +15,61 @@ import (
 
 func TestBankAccount_Apply(t *testing.T) {
 	testCases := map[string]struct {
-		entity     BankAccount
-		event      proto.Message
-		wantEntity BankAccount
-		wantPanic  bool
+		givenEntity BankAccount
+		subject     streaming.Subject
+		eventBytes  []byte
+		wantEntity  BankAccount
+		wantError   error
 	}{
 		"create": {
-			entity:     BankAccount{},
-			event:      &eventpb.Created{Name: "foo"},
-			wantEntity: BankAccount{Name: "foo"},
+			subject:     streaming.Subject{Action: "Created"},
+			givenEntity: BankAccount{},
+			eventBytes:  marshal(&eventpb.Created{Name: "foo"}),
+			wantEntity:  BankAccount{Name: "foo"},
 		},
 		"create uses an empty entity before applying": {
-			entity:     BankAccount{Name: "non-fresh-entity"},
-			event:      &eventpb.Created{Name: ""},
-			wantEntity: BankAccount{Name: ""},
+			subject:     streaming.Subject{Action: "Created"},
+			givenEntity: BankAccount{Name: "non-fresh-entity"},
+			eventBytes:  marshal(&eventpb.Created{Name: ""}),
+			wantEntity:  BankAccount{Name: ""},
 		},
 		"edited": {
-			entity:     BankAccount{Name: "foo"},
-			event:      &eventpb.Edited{Name: "bar"},
-			wantEntity: BankAccount{Name: "bar"},
+			subject:     streaming.Subject{Action: "Edited"},
+			givenEntity: BankAccount{Name: "foo"},
+			eventBytes:  marshal(&eventpb.Edited{Name: "bar"}),
+			wantEntity:  BankAccount{Name: "bar"},
 		},
 		"edited doesn't override with zero values": {
-			entity:     BankAccount{Name: "foo"},
-			event:      &eventpb.Edited{Name: ""},
-			wantEntity: BankAccount{Name: "foo"},
+			subject:     streaming.Subject{Action: "Edited"},
+			givenEntity: BankAccount{Name: "foo"},
+			eventBytes:  marshal(&eventpb.Edited{Name: ""}),
+			wantEntity:  BankAccount{Name: "foo"},
 		},
 		"unknown event": {
-			entity:    BankAccount{},
-			event:     &eventpb.UnhandledEvent{},
-			wantPanic: true,
+			subject:     streaming.Subject{Action: "Unknown"},
+			givenEntity: BankAccount{},
+			eventBytes:  marshal(&eventpb.UnhandledEvent{}),
 		},
 	}
 	for testName, tt := range testCases {
 		t.Run(testName, func(t *testing.T) {
-			got := tt.entity
+			got := tt.givenEntity
 
-			if tt.wantPanic {
-				require.Panics(t, func() {
-					got.Apply(tt.event)
-				})
+			err := got.Apply(tt.subject, tt.eventBytes)
+			if tt.wantError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tt.wantError.Error())
 				return
 			}
-
-			got.Apply(tt.event)
 			assert.Equal(t, tt.wantEntity, got)
 		})
 	}
+}
+
+func marshal(pb proto.Message) []byte {
+	bytes, err := proto.Marshal(pb)
+	if err != nil {
+		panic(fmt.Errorf("marshalling %#v: %v", pb, err))
+	}
+	return bytes
 }

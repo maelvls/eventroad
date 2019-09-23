@@ -3,7 +3,8 @@ package service
 import (
 	"fmt"
 
-	"github.com/golang/protobuf/proto"
+	"github.com/gogo/protobuf/proto"
+	streaming "github.com/maelvls/eventroad"
 	"github.com/maelvls/eventroad/example/eventpb"
 )
 
@@ -14,17 +15,32 @@ type BankAccount struct {
 
 // Apply takes a BankAccount and mutates it in-place using the given event.
 // If the given event doesn't have a type known by Apply, Apply will panic.
-func (cur *BankAccount) Apply(event proto.Message) {
-	if ev, ok := event.(*eventpb.Created); ok {
+//
+// Possible errors: Subject isn't know by Apply (likely) or proto.Unmarshal
+// returns an error (unlikely). Apply will never error because of
+// preconditions unmet regarding the entity state or the event content.
+func (cur *BankAccount) Apply(s streaming.Subject, event []byte) error {
+	switch s.Action {
+
+	case "Created":
+		ev := &eventpb.Created{}
+		if err := proto.Unmarshal(event, ev); err != nil {
+			return err
+		}
 		cur.Name = ev.GetName()
-		return
-	}
-	if ev, ok := event.(*eventpb.Edited); ok {
+		return nil
+
+	case "Edited":
+		ev := &eventpb.Edited{}
+		if err := proto.Unmarshal(event, ev); err != nil {
+			return err
+		}
 		if ev.GetName() != "" {
 			cur.Name = ev.GetName()
 		}
-		return
-	}
+		return nil
 
-	panic(fmt.Errorf("Apply doesn't know how to deal with this event: %#v", event))
+	default:
+		return fmt.Errorf("Apply doesn't know how to deal with event type '%s'. Raw event: %v", event, string(event))
+	}
 }

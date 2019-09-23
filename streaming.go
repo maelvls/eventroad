@@ -1,8 +1,6 @@
 package streaming
 
 import (
-	"fmt"
-
 	"github.com/golang/protobuf/proto"
 )
 
@@ -29,19 +27,6 @@ type Subject struct {
 	Root     string
 	EntityID string
 	Action   string
-}
-
-// String returns a subject formatted as `BankAccount.OTE3Yzk3Y2Y.Created`.
-// If ID or Event are left blank, its value is replaced by `*` (wildcard).
-// The Root field cannot be empty.
-func (s Subject) String() string {
-	if s.EntityID == "" {
-		s.EntityID = "*"
-	}
-	if s.Action == "" {
-		s.Action = "*"
-	}
-	return fmt.Sprintf("%s.%s.%s", s.Root, s.EntityID, s.Action)
 }
 
 // Server allows you to interact with a streaming server such as NATS or

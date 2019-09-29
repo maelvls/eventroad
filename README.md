@@ -2,6 +2,18 @@
 
 Event-sourcing library PoC with NATS
 
+## Terminology
+
+- a **subject** = a string of the form `BankAccount.Ly8gRmV0Y2g.Created`.
+
+- a **projection service** = a service that subscribes to a subject such as
+  `BankAccount.*.*` in order to provide a 'view' of the data.
+- a **command service** = a service that (1) subscribes temporarily to a
+  subject `BankAccount.Ly8gRmV0Y2g.*` for rehydrating the entity at a given
+  time in order to check that the business rules are met before applying
+  the command and (2) publish an event if that command meets the business
+  rules.
+
 ## Two producers emitting two conflicting events
 
 **tl;dr:** one producer with one execution queue should be fine (they
@@ -50,3 +62,61 @@ of complexity to any consumer; if we have 3 consumers of a stream, the
 migration of old events (provided they are versionned e.g. with a
 `version:9` field) then the logic of migration will have to be written
 and maintained in three different places
+
+## Existing ES projects
+
+Our project mixes ES, CQRS and PubSub.
+
+- https://github.com/mantzas/incata: ES with relational DBs, does not takle
+  the CQRS side but has an interesting `Appender` interface. Event is
+
+  ```go
+    // Event this is the main event that will get written
+    type Event struct {
+        ID        int64             # the ID given by the DB
+        SourceID  uuid.UUID         # the ID we give ourselves
+        Created   time.Time
+        Payload   interface{}
+        EventType string
+        Version   int
+    }
+  ```
+
+- https://github.com/pavelnikolov/eventsourcing-go: not very interesting
+  since it uses a in-mem `map[string]interface{}` DB. Only the
+  `event-sourcing` branch has the notions of events and broker.
+
+- https://github.com/botchniaque/eventsourcing-cqrs-go uses in-mem DB; it
+  goes full Command/Aggregate but nothing really interesting
+
+- https://github.com/savaki/eventsource has the same idea as [1]:
+
+  ```go
+  type Event interface {
+      AggregateID() string
+      EventVersion() int
+      EventAt() time.Time
+  }
+  ```
+
+  and a base impl that all events should embed:
+
+  ```Go
+  type Model struct {
+      ID string
+      Version int
+      At time.Time
+  }
+  ```
+
+  The event store interface looks like this (the store is implemented as an
+  in-mem map):
+
+  ```go
+    type Store interface {
+        // Save saves events to the store
+        Save(aggregateID string, records ...Record) error
+        // Fetch retrieves the History of events with the specified aggregate id
+        Fetch(aggregateID string, version int) (History, error)
+    }
+  ```
